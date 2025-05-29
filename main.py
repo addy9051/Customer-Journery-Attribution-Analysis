@@ -83,6 +83,9 @@ def main():
         )
         
         # Model-specific parameters
+        decay_rate = 0.5 # Initialize decay_rate
+        first_touch_weight = 0.4 # Initialize first_touch_weight
+        last_touch_weight = 0.4 # Initialize last_touch_weight
         if attribution_model == "Time-Decay":
             decay_rate = st.slider(
                 "Time Decay Rate",
@@ -92,8 +95,6 @@ def main():
                 step=0.1,
                 help="Higher values give more weight to recent touchpoints"
             )
-        else:
-            decay_rate = 0.5
             
         if attribution_model == "Position-Based":
             first_touch_weight = st.slider(
@@ -112,9 +113,6 @@ def main():
                 step=0.1,
                 help="Weight given to the last touchpoint"
             )
-        else:
-            first_touch_weight = 0.4
-            last_touch_weight = 0.4
     
     # Process button
     process_data = st.sidebar.button("🔄 Process Data & Analyze", type="primary")
@@ -265,7 +263,7 @@ def display_analysis_results(journey_data, attribution_model):
     if attribution_model == "Compare All Models":
         display_attribution_comparison(journey_data)
     else:
-        display_single_attribution_model(journey_data, attribution_model, decay_rate, first_touch_weight, last_touch_weight)
+        display_single_attribution_model(journey_data, attribution_model, decay_rate=decay_rate, first_touch_weight=first_touch_weight, last_touch_weight=last_touch_weight)
     
     # Journey path analysis
     display_journey_path_analysis(journey_data)

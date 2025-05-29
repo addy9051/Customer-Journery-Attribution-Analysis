@@ -20,7 +20,7 @@ def first_touch_attribution(journey_data):
         
         # Count conversions by first-touch channel
         # Only count customers who actually converted
-        converting_customers = journey_data[journey_data['conversion'] == True]['customer_id'].unique()
+        converting_customers = journey_data[journey_data['conversion']==True]['customer_id'].unique()
         first_touch_converting = first_touch_data[first_touch_data.index.isin(converting_customers)]
         
         attribution_results = first_touch_converting['channel'].value_counts().reset_index()
@@ -30,7 +30,7 @@ def first_touch_attribution(journey_data):
         
     except Exception as e:
         print(f"Error in first_touch_attribution: {str(e)}")
-        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        return pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
 
 def last_touch_attribution(journey_data):
     """
@@ -47,13 +47,13 @@ def last_touch_attribution(journey_data):
         attribution_results = []
         
         # Get all customers who converted
-        converting_customers = journey_data[journey_data['conversion'] == True]['customer_id'].unique()
+        converting_customers = journey_data[journey_data['conversion']==True]['customer_id'].unique()
         
         for customer_id in converting_customers:
             customer_journey = journey_data[journey_data['customer_id'] == customer_id].sort_values('timestamp')
             
             # Find conversion events for this customer
-            conversion_events = customer_journey[customer_journey['conversion'] == True]
+            conversion_events = customer_journey[customer_journey['conversion']]
             
             for _, conversion_event in conversion_events.iterrows():
                 conversion_timestamp = conversion_event['timestamp']
@@ -83,13 +83,13 @@ def last_touch_attribution(journey_data):
             results_df = pd.DataFrame(attribution_results)
             final_results = results_df.groupby('channel')['attributed_conversions'].sum().reset_index()
         else:
-            final_results = pd.DataFrame(columns=['channel', 'attributed_conversions'])
+            final_results = pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
         
         return final_results
         
     except Exception as e:
         print(f"Error in last_touch_attribution: {str(e)}")
-        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        return pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
 
 def linear_attribution(journey_data):
     """
@@ -106,13 +106,13 @@ def linear_attribution(journey_data):
         attribution_results = []
         
         # Get all customers who converted
-        converting_customers = journey_data[journey_data['conversion'] == True]['customer_id'].unique()
+        converting_customers = journey_data[journey_data['conversion']==True]['customer_id'].unique()
         
         for customer_id in converting_customers:
             customer_journey = journey_data[journey_data['customer_id'] == customer_id].sort_values('timestamp')
             
             # Find conversion events for this customer
-            conversion_events = customer_journey[customer_journey['conversion'] == True]
+            conversion_events = customer_journey[customer_journey['conversion']==True]
             
             for _, conversion_event in conversion_events.iterrows():
                 conversion_timestamp = conversion_event['timestamp']
@@ -137,13 +137,13 @@ def linear_attribution(journey_data):
             results_df = pd.DataFrame(attribution_results)
             final_results = results_df.groupby('channel')['attributed_conversions'].sum().reset_index()
         else:
-            final_results = pd.DataFrame(columns=['channel', 'attributed_conversions'])
+            final_results = pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
         
         return final_results
         
     except Exception as e:
         print(f"Error in linear_attribution: {str(e)}")
-        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        return pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
 
 def time_decay_attribution(journey_data, decay_rate=0.5):
     """
@@ -202,13 +202,13 @@ def time_decay_attribution(journey_data, decay_rate=0.5):
             results_df = pd.DataFrame(attribution_results)
             final_results = results_df.groupby('channel')['attributed_conversions'].sum().reset_index()
         else:
-            final_results = pd.DataFrame(columns=['channel', 'attributed_conversions'])
+            final_results = pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
         
         return final_results
         
     except Exception as e:
         print(f"Error in time_decay_attribution: {str(e)}")
-        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        return pd.DataFrame(columns=pd.Index((['channel', 'attributed_conversions'])))
 
 def position_based_attribution(journey_data, first_touch_weight=0.4, last_touch_weight=0.4):
     """
@@ -296,13 +296,13 @@ def position_based_attribution(journey_data, first_touch_weight=0.4, last_touch_
             results_df = pd.DataFrame(attribution_results)
             final_results = results_df.groupby('channel')['attributed_conversions'].sum().reset_index()
         else:
-            final_results = pd.DataFrame(columns=['channel', 'attributed_conversions'])
+            final_results = pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
         
         return final_results
         
     except Exception as e:
         print(f"Error in position_based_attribution: {str(e)}")
-        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        return pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
 
 def calculate_attribution_comparison(journey_data):
     """
@@ -350,11 +350,11 @@ def calculate_attribution_comparison(journey_data):
             final_comparison = pd.concat(comparison_results, ignore_index=True)
             return final_comparison
         else:
-            return pd.DataFrame(columns=['model', 'channel', 'attributed_conversions'])
+            return pd.DataFrame(columns=pd.Index(['model', 'channel', 'attributed_conversions']))
         
     except Exception as e:
         print(f"Error in calculate_attribution_comparison: {str(e)}")
-        return pd.DataFrame(columns=['model', 'channel', 'attributed_conversions'])
+        return pd.DataFrame(columns=pd.Index(['model', 'channel', 'attributed_conversions']))
 
 def calculate_attribution_metrics(journey_data, attribution_results):
     """

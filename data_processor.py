@@ -247,7 +247,7 @@ def generate_customer_journeys(df, lookback_days=14, min_touchpoints=2):
         
         # Filter customers with minimum touchpoints
         customer_touchpoint_counts = journey_df.groupby('customer_id').size()
-        valid_customers_series = customer_touchpoint_counts[customer_touchpoint_counts >= min_touchpoints]
+        valid_customers_series = pd.Series(customer_touchpoint_counts[customer_touchpoint_counts >= min_touchpoints])
         valid_customers = list(valid_customers_series.index)
         journey_df = journey_df[journey_df['customer_id'].isin(valid_customers)]
         
@@ -375,7 +375,7 @@ def validate_journey_data(journey_df):
         return False
     
     # Check that each customer has at least one conversion
-    customers_with_conversions = journey_df[journey_df['conversion'] == True]['customer_id'].unique()
+    customers_with_conversions = journey_df[journey_df['conversion']==True]['customer_id'].unique()
     total_customers = journey_df['customer_id'].nunique()
     
     if len(customers_with_conversions) == 0:
