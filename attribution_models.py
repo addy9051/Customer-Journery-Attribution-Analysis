@@ -608,7 +608,7 @@ def shapley_value_attribution(journey_data):
                         marginal_contributions.append(marginal_contribution)
                     
                     # Average marginal contribution for this customer and channel
-                    avg_contribution = np.mean(marginal_contributions) if marginal_contributions else 0
+                    avg_contribution = float(np.mean(marginal_contributions)) if marginal_contributions else 0.0
                     shapley_values[target_channel] += avg_contribution
             
             # Normalize Shapley values to sum to total conversions

@@ -358,12 +358,10 @@ def display_single_attribution_model(journey_data, model_name, decay_rate=0.5, f
             attribution_display['attributed_conversions'].sum() * 100
         ).round(1)
         
+        attribution_display_renamed = attribution_display[['channel', 'attributed_conversions', 'attribution_percentage']].copy()
+        attribution_display_renamed.columns = ['Channel', 'Attributed Conversions', 'Attribution %']
         st.dataframe(
-            attribution_display[['channel', 'attributed_conversions', 'attribution_percentage']].rename(columns={
-                'channel': 'Channel',
-                'attributed_conversions': 'Attributed Conversions',
-                'attribution_percentage': 'Attribution %'
-            }),
+            attribution_display_renamed,
             use_container_width=True,
             hide_index=True
         )
