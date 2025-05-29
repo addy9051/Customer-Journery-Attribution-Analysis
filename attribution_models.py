@@ -509,11 +509,14 @@ def markov_chain_attribution(journey_data):
                     'attributed_conversions': 0.1  # Small attribution for presence
                 })
         
-        return pd.DataFrame(attribution_results) if attribution_results else pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        if attribution_results:
+            return pd.DataFrame(attribution_results)
+        else:
+            return pd.DataFrame({'channel': [], 'attributed_conversions': []})
         
     except Exception as e:
         print(f"Error in markov_chain_attribution: {str(e)}")
-        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        return pd.DataFrame({'channel': [], 'attributed_conversions': []})
 
 def shapley_value_attribution(journey_data):
     """
@@ -579,7 +582,10 @@ def shapley_value_attribution(journey_data):
                     for _ in range(min(n_samples, 2**len(other_channels))):
                         # Random subset of other channels
                         subset_size = np.random.randint(0, len(other_channels) + 1)
-                        coalition = set(np.random.choice(other_channels, subset_size, replace=False) if other_channels else [])
+                        if other_channels and subset_size > 0:
+                            coalition = set(np.random.choice(other_channels, subset_size, replace=False))
+                        else:
+                            coalition = set()
                         
                         # Calculate marginal contribution
                         # With target channel
@@ -629,7 +635,10 @@ def shapley_value_attribution(journey_data):
                     'attributed_conversions': total_conversions / len(channels)
                 })
         
-        return pd.DataFrame(attribution_results) if attribution_results else pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        if attribution_results:
+            return pd.DataFrame(attribution_results)
+        else:
+            return pd.DataFrame({'channel': [], 'attributed_conversions': []})
         
     except Exception as e:
         print(f"Error in shapley_value_attribution: {str(e)}")

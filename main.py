@@ -90,7 +90,7 @@ def main():
         )
         
         # Model-specific parameters - only show when relevant
-        if attribution_model in "Time-Decay":
+        if attribution_model == "Time-Decay":
             decay_rate = st.slider(
                 "Time Decay Rate",
                 min_value=0.1,
@@ -100,7 +100,7 @@ def main():
                 help="Higher values give more weight to recent touchpoints"
             )
             
-        if attribution_model in "Position-Based":
+        if attribution_model == "Position-Based":
             first_touch_weight = st.slider(
                 "First Touch Weight",
                 min_value=0.1,
@@ -117,7 +117,7 @@ def main():
                 step=0.1,
                 help="Weight given to the last touchpoint"
             )
-        if attribution_model in "Compare All Models":
+        if attribution_model == "Compare All Models":
             decay_rate = st.slider(
                 "Time Decay Rate",
                 min_value=0.1,
