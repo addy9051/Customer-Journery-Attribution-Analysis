@@ -326,7 +326,9 @@ def calculate_attribution_comparison(journey_data, decay_rate=0.5, first_touch_w
             'Last-Touch': last_touch_attribution,
             'Linear': linear_attribution,
             'Time-Decay': time_decay_attribution,
-            'Position-Based': position_based_attribution
+            'Position-Based': position_based_attribution,
+            'Markov Chain': markov_chain_attribution,
+            'Shapley Value': shapley_value_attribution
         }
         
         for model_name, attribution_function in models.items():
@@ -407,3 +409,240 @@ def calculate_attribution_metrics(journey_data, attribution_results):
     except Exception as e:
         print(f"Error calculating attribution metrics: {str(e)}")
         return {}
+
+def markov_chain_attribution(journey_data):
+    """
+    Implements Markov Chain attribution model.
+    Uses transition probabilities between channels to determine attribution.
+    
+    Args:
+        journey_data (pd.DataFrame): Customer journey data
+    
+    Returns:
+        pd.DataFrame: Attribution results with columns: channel, attributed_conversions
+    """
+    try:
+        attribution_results = []
+        
+        # Get all customers who converted
+        converting_customers = journey_data[journey_data['conversion'] == True]['customer_id'].unique()
+        
+        # Build transition matrix for all journeys
+        transition_counts = {}
+        total_transitions = {}
+        
+        for customer_id in converting_customers:
+            customer_journey = journey_data[journey_data['customer_id'] == customer_id].sort_values('timestamp')
+            conversion_events = customer_journey[customer_journey['conversion'] == True]
+            
+            for _, conversion_event in conversion_events.iterrows():
+                conversion_timestamp = conversion_event['timestamp']
+                journey_touchpoints = customer_journey[customer_journey['timestamp'] <= conversion_timestamp]
+                
+                channels = journey_touchpoints['channel'].tolist()
+                
+                # Add START and END states
+                full_path = ['START'] + channels + ['CONVERSION']
+                
+                # Count transitions
+                for i in range(len(full_path) - 1):
+                    from_state = full_path[i]
+                    to_state = full_path[i + 1]
+                    
+                    if from_state not in transition_counts:
+                        transition_counts[from_state] = {}
+                        total_transitions[from_state] = 0
+                    
+                    if to_state not in transition_counts[from_state]:
+                        transition_counts[from_state][to_state] = 0
+                    
+                    transition_counts[from_state][to_state] += 1
+                    total_transitions[from_state] += 1
+        
+        # Calculate transition probabilities
+        transition_probs = {}
+        for from_state in transition_counts:
+            transition_probs[from_state] = {}
+            for to_state in transition_counts[from_state]:
+                transition_probs[from_state][to_state] = (
+                    transition_counts[from_state][to_state] / total_transitions[from_state]
+                )
+        
+        # Calculate removal effect for each channel
+        channels = journey_data['channel'].unique()
+        channel_removal_effects = {}
+        
+        for channel in channels:
+            if channel in transition_probs:
+                # Calculate conversion probability without this channel
+                removal_effect = 0
+                
+                # Simplified removal effect calculation
+                if 'CONVERSION' in transition_probs.get(channel, {}):
+                    direct_conversion_prob = transition_probs[channel]['CONVERSION']
+                    removal_effect = direct_conversion_prob
+                
+                # Add indirect effects from other channels that lead to this channel
+                for from_channel in transition_probs:
+                    if channel in transition_probs[from_channel]:
+                        indirect_effect = transition_probs[from_channel][channel] * removal_effect
+                        removal_effect += indirect_effect * 0.1  # Dampening factor
+                
+                channel_removal_effects[channel] = removal_effect
+        
+        # Normalize and convert to attribution
+        total_effect = sum(channel_removal_effects.values()) if channel_removal_effects else 1
+        total_conversions = len(converting_customers)
+        
+        for channel, effect in channel_removal_effects.items():
+            attributed_conversions = (effect / total_effect) * total_conversions if total_effect > 0 else 0
+            attribution_results.append({
+                'channel': channel,
+                'attributed_conversions': attributed_conversions
+            })
+        
+        # Handle channels with no direct attribution
+        for channel in channels:
+            if channel not in channel_removal_effects:
+                attribution_results.append({
+                    'channel': channel,
+                    'attributed_conversions': 0.1  # Small attribution for presence
+                })
+        
+        return pd.DataFrame(attribution_results) if attribution_results else pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        
+    except Exception as e:
+        print(f"Error in markov_chain_attribution: {str(e)}")
+        return pd.DataFrame(columns=['channel', 'attributed_conversions'])
+
+def shapley_value_attribution(journey_data):
+    """
+    Implements Shapley Value attribution model using cooperative game theory approach.
+    
+    Args:
+        journey_data (pd.DataFrame): Customer journey data
+    
+    Returns:
+        pd.DataFrame: Attribution results with columns: channel, attributed_conversions
+    """
+    try:
+        import itertools
+        from sklearn.linear_model import LogisticRegression
+        import numpy as np
+        
+        attribution_results = []
+        
+        # Get all customers who converted
+        converting_customers = journey_data[journey_data['conversion'] == True]['customer_id'].unique()
+        all_customers = journey_data['customer_id'].unique()
+        
+        # Prepare feature matrix for logistic regression
+        channels = journey_data['channel'].unique()
+        channel_to_idx = {channel: idx for idx, channel in enumerate(channels)}
+        
+        X = []
+        y = []
+        
+        for customer_id in all_customers:
+            customer_journey = journey_data[journey_data['customer_id'] == customer_id]
+            
+            # Create feature vector (channel presence)
+            features = [0] * len(channels)
+            for _, touchpoint in customer_journey.iterrows():
+                if touchpoint['channel'] in channel_to_idx:
+                    features[channel_to_idx[touchpoint['channel']]] = 1
+            
+            X.append(features)
+            y.append(1 if customer_id in converting_customers else 0)
+        
+        # Train logistic regression model
+        if len(set(y)) > 1:  # Ensure we have both classes
+            model = LogisticRegression(random_state=42, max_iter=1000)
+            model.fit(X, y)
+            
+            # Calculate Shapley values using sampling approximation
+            n_channels = len(channels)
+            shapley_values = {channel: 0 for channel in channels}
+            n_samples = min(100, 2**(n_channels-1))  # Limit computational complexity
+            
+            for customer_id in converting_customers:
+                customer_journey = journey_data[journey_data['customer_id'] == customer_id]
+                customer_channels = set(customer_journey['channel'].unique())
+                
+                # For each channel in the customer's journey
+                for target_channel in customer_channels:
+                    marginal_contributions = []
+                    
+                    # Sample coalitions
+                    other_channels = [ch for ch in customer_channels if ch != target_channel]
+                    
+                    for _ in range(min(n_samples, 2**len(other_channels))):
+                        # Random subset of other channels
+                        subset_size = np.random.randint(0, len(other_channels) + 1)
+                        coalition = set(np.random.choice(other_channels, subset_size, replace=False) if other_channels else [])
+                        
+                        # Calculate marginal contribution
+                        # With target channel
+                        features_with = [0] * len(channels)
+                        for ch in coalition | {target_channel}:
+                            if ch in channel_to_idx:
+                                features_with[channel_to_idx[ch]] = 1
+                        
+                        # Without target channel
+                        features_without = [0] * len(channels)
+                        for ch in coalition:
+                            if ch in channel_to_idx:
+                                features_without[channel_to_idx[ch]] = 1
+                        
+                        # Predict probabilities
+                        prob_with = model.predict_proba([features_with])[0][1]
+                        prob_without = model.predict_proba([features_without])[0][1]
+                        
+                        marginal_contribution = prob_with - prob_without
+                        marginal_contributions.append(marginal_contribution)
+                    
+                    # Average marginal contribution for this customer and channel
+                    avg_contribution = np.mean(marginal_contributions) if marginal_contributions else 0
+                    shapley_values[target_channel] += avg_contribution
+            
+            # Normalize Shapley values to sum to total conversions
+            total_shapley = sum(shapley_values.values())
+            total_conversions = len(converting_customers)
+            
+            for channel, shapley_val in shapley_values.items():
+                if total_shapley > 0:
+                    attributed_conversions = (shapley_val / total_shapley) * total_conversions
+                else:
+                    attributed_conversions = total_conversions / len(channels)  # Equal distribution fallback
+                
+                attribution_results.append({
+                    'channel': channel,
+                    'attributed_conversions': max(0, attributed_conversions)  # Ensure non-negative
+                })
+        
+        else:
+            # Fallback to equal attribution if no conversion variation
+            total_conversions = len(converting_customers)
+            for channel in channels:
+                attribution_results.append({
+                    'channel': channel,
+                    'attributed_conversions': total_conversions / len(channels)
+                })
+        
+        return pd.DataFrame(attribution_results) if attribution_results else pd.DataFrame(columns=['channel', 'attributed_conversions'])
+        
+    except Exception as e:
+        print(f"Error in shapley_value_attribution: {str(e)}")
+        # Fallback to simple attribution
+        converting_customers = journey_data[journey_data['conversion'] == True]['customer_id'].unique()
+        channels = journey_data['channel'].unique()
+        total_conversions = len(converting_customers)
+        
+        attribution_results = []
+        for channel in channels:
+            attribution_results.append({
+                'channel': channel,
+                'attributed_conversions': total_conversions / len(channels)
+            })
+        
+        return pd.DataFrame(attribution_results)

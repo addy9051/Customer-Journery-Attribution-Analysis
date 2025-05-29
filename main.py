@@ -14,6 +14,8 @@ from attribution_models import (
     linear_attribution,
     time_decay_attribution,
     position_based_attribution,
+    markov_chain_attribution,
+    shapley_value_attribution,
     calculate_attribution_comparison
 )
 
@@ -60,7 +62,7 @@ def main():
     st.sidebar.subheader("🎯 Attribution Model")
     attribution_model = st.sidebar.selectbox(
         "Select Attribution Model",
-        ["First-Touch", "Last-Touch", "Linear", "Time-Decay", "Position-Based", "Compare All Models"],
+        ["First-Touch", "Last-Touch", "Linear", "Time-Decay", "Position-Based", "Markov Chain", "Shapley Value", "Compare All Models"],
         help="Choose how to attribute conversions to marketing touchpoints"
     )
     
@@ -88,7 +90,7 @@ def main():
         )
         
         # Model-specific parameters - only show when relevant
-        if attribution_model in ["Time-Decay", "Compare All Models"]:
+        if attribution_model in "Time-Decay":
             decay_rate = st.slider(
                 "Time Decay Rate",
                 min_value=0.1,
@@ -98,7 +100,7 @@ def main():
                 help="Higher values give more weight to recent touchpoints"
             )
             
-        if attribution_model in ["Position-Based", "Compare All Models"]:
+        if attribution_model in "Position-Based":
             first_touch_weight = st.slider(
                 "First Touch Weight",
                 min_value=0.1,
@@ -115,6 +117,34 @@ def main():
                 step=0.1,
                 help="Weight given to the last touchpoint"
             )
+        if attribution_model in "Compare All Models":
+            decay_rate = st.slider(
+                "Time Decay Rate",
+                min_value=0.1,
+                max_value=0.9,
+                value=0.5,
+                step=0.1,
+                help="Higher values give more weight to recent touchpoints"
+            )
+            first_touch_weight = st.slider(
+                "First Touch Weight",
+                min_value=0.1,
+                max_value=0.8,
+                value=0.4,
+                step=0.1,
+                help="Weight given to the first touchpoint"
+            )
+            last_touch_weight = st.slider(
+                "Last Touch Weight", 
+                min_value=0.1,
+                max_value=0.8,
+                value=0.4,
+                step=0.1,
+                help="Weight given to the last touchpoint"
+            )
+            
+            
+            
     
     # Process button
     process_data = st.sidebar.button("🔄 Process Data & Analyze", type="primary")
@@ -157,7 +187,7 @@ def main():
             return
         
         # Display analysis results
-        display_analysis_results(journey_data, attribution_model)
+        display_analysis_results(journey_data, attribution_model, decay_rate, first_touch_weight, last_touch_weight)
     
     else:
         # Initial state - show instructions
@@ -195,7 +225,7 @@ def display_welcome_screen():
         Choose your data source in the sidebar and start analyzing customer journeys!
         """)
 
-def display_analysis_results(journey_data, attribution_model):
+def display_analysis_results(journey_data, attribution_model, decay_rate, first_touch_weight, last_touch_weight):
     """Display the complete analysis results"""
     
     # Data overview section
@@ -287,6 +317,10 @@ def display_single_attribution_model(journey_data, model_name, decay_rate=0.5, f
         attribution_results = time_decay_attribution(journey_data, decay_rate=decay_rate)
     elif model_name == "Position-Based":
         attribution_results = position_based_attribution(journey_data, first_touch_weight=first_touch_weight, last_touch_weight=last_touch_weight)
+    elif model_name == "Markov Chain":
+        attribution_results = markov_chain_attribution(journey_data)
+    elif model_name == "Shapley Value":
+        attribution_results = shapley_value_attribution(journey_data)
     else:
         attribution_results = first_touch_attribution(journey_data)  # fallback
     
@@ -331,7 +365,7 @@ def display_attribution_comparison(journey_data, decay_rate=0.5, first_touch_wei
     
     st.subheader("Attribution Model Comparison")
     
-    comparison_results = calculate_attribution_comparison(journey_data, decay_rate, first_touch_weight, last_touch_weight)
+    comparison_results = calculate_attribution_comparison(journey_data, decay_rate=decay_rate, first_touch_weight=first_touch_weight, last_touch_weight=last_touch_weight)
     
     # Create comparison visualization
     fig = go.Figure()
