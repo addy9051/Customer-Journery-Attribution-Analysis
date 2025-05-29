@@ -145,75 +145,11 @@ def generate_sample_ecommerce_data(num_customers=500, date_range_days=365):
     # Convert to DataFrame
     df = pd.DataFrame(transactions)
     
-    # Add some realistic data patterns
-    
-    # 1. Seasonal patterns (higher sales in November-December)
-    df['Month'] = df['InvoiceDate'].dt.month
-    holiday_months = [11, 12]
-    
-    # Increase transaction volume for holiday months
-    holiday_mask = df['Month'].isin(holiday_months)
-    holiday_customers = df[holiday_mask]['CustomerID'].unique()
-    
-    # Add extra transactions for holiday period
-    extra_transactions = []
-    if len(holiday_customers) > 0:
-        selected_customers = np.random.choice(holiday_customers, size=max(1, len(holiday_customers)//2), replace=False)
-        for customer_id in selected_customers:
-            # Add 1-2 extra holiday transactions
-            for _ in range(np.random.randint(1, 3)):
-                holiday_date = datetime(2024, 12, np.random.randint(1, 25))
-                
-                # Generate holiday transaction
-                category = np.random.choice(list(products.keys()))
-                price_range = products[category]['price_range']
-                unit_price = round(np.random.uniform(price_range[0], price_range[1]), 2)
-                
-                customer_country = df[df['CustomerID'] == customer_id]['Country'].iloc[0]
-                
-                extra_transactions.append({
-                    'InvoiceNo': f"INV{invoice_counter}",
-                    'StockCode': f"{category[:3].upper()}{np.random.randint(1000, 9999)}",
-                    'Description': f"Holiday {category} Item",
-                    'Quantity': np.random.randint(1, 3),
-                    'InvoiceDate': holiday_date,
-                    'UnitPrice': unit_price,
-                    'CustomerID': customer_id,
-                    'Country': customer_country
-                })
-                invoice_counter += 1
-    
-    if extra_transactions:
-        extra_df = pd.DataFrame(extra_transactions)
-        df = pd.concat([df, extra_df], ignore_index=True)
-    
-    # 2. Add some returns/cancellations (negative quantities)
-    num_returns = len(df) // 50  # About 2% return rate
-    return_indices = np.random.choice(df.index, size=num_returns, replace=False)
-    
-    for idx in return_indices:
-        # Create return transaction
-        original = df.loc[idx].copy()
-        return_transaction = {
-            'InvoiceNo': f"C{original['InvoiceNo'][3:]}",  # Return invoice format
-            'StockCode': original['StockCode'],
-            'Description': original['Description'],
-            'Quantity': -abs(original['Quantity']),  # Negative quantity
-            'InvoiceDate': original['InvoiceDate'] + timedelta(days=np.random.randint(1, 30)),
-            'UnitPrice': original['UnitPrice'],
-            'CustomerID': original['CustomerID'],
-            'Country': original['Country']
-        }
-        df = pd.concat([df, pd.DataFrame([return_transaction])], ignore_index=True)
-    
     # Sort by date and customer
     df = df.sort_values(['CustomerID', 'InvoiceDate'])
     
     # Reset index
     df = df.reset_index(drop=True)
-    
-    # Remove the temporary Month column
-    df = df.drop('Month', axis=1)
     
     return df
 

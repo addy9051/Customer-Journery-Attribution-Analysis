@@ -247,7 +247,8 @@ def generate_customer_journeys(df, lookback_days=14, min_touchpoints=2):
         
         # Filter customers with minimum touchpoints
         customer_touchpoint_counts = journey_df.groupby('customer_id').size()
-        valid_customers = customer_touchpoint_counts[customer_touchpoint_counts >= min_touchpoints].index
+        valid_customers_series = customer_touchpoint_counts[customer_touchpoint_counts >= min_touchpoints]
+        valid_customers = list(valid_customers_series.index)
         journey_df = journey_df[journey_df['customer_id'].isin(valid_customers)]
         
         # Reset index
