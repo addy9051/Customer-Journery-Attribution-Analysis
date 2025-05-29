@@ -36,11 +36,23 @@ def main():
     
     # File upload option
     st.sidebar.subheader("📁 Data Source")
-    uploaded_file = st.sidebar.file_uploader(
-        "Upload your e-commerce dataset",
-        type=['csv', 'xlsx'],
-        help="Upload a CSV or Excel file with transaction data (CustomerID, InvoiceDate, etc.)"
+    
+    # Data source selection
+    data_source = st.sidebar.radio(
+        "Choose your data source:",
+        ["Upload your own dataset", "Use sample dataset for testing"],
+        help="Upload real transaction data or test with synthetic data"
     )
+    
+    uploaded_file = None
+    if data_source == "Upload your own dataset":
+        uploaded_file = st.sidebar.file_uploader(
+            "Upload your e-commerce dataset",
+            type=['csv', 'xlsx'],
+            help="Upload a CSV or Excel file with transaction data (CustomerID, InvoiceDate, etc.)"
+        )
+    else:
+        st.sidebar.info("Using realistic sample dataset with 300 customers and 1 year of transaction history")
     
     # Attribution model selection
     st.sidebar.subheader("🎯 Attribution Model")
@@ -78,14 +90,17 @@ def main():
         if process_data:
             with st.spinner("Loading and processing data..."):
                 try:
-                    if uploaded_file is not None:
+                    if data_source == "Upload your own dataset" and uploaded_file is not None:
                         journey_data = process_uploaded_file(uploaded_file, lookback_days, min_touchpoints)
-                    else:
-                        # Try to load default dataset
+                    elif data_source == "Use sample dataset for testing":
+                        # Generate sample data for testing
                         journey_data = load_and_process_retail_data(
                             lookback_days=lookback_days,
                             min_touchpoints=min_touchpoints
                         )
+                    else:
+                        st.error("Please upload a dataset to proceed with the analysis.")
+                        return
                     
                     if journey_data.empty:
                         st.error("❌ No data could be processed. Please check your file format or upload a valid dataset.")
@@ -125,8 +140,8 @@ def display_welcome_screen():
         by analyzing real e-commerce transaction data.
         
         #### 📋 How to Get Started:
-        1. **Upload your data** (CSV/Excel) with columns like CustomerID, InvoiceDate, etc.
-        2. **Choose an attribution model** to analyze how touchpoints contribute to conversions
+        1. **Choose your data source** - Upload your own transaction data or test with sample data
+        2. **Select an attribution model** to analyze how touchpoints contribute to conversions
         3. **Configure settings** for journey analysis (lookback period, minimum touchpoints)
         4. **Click "Process Data & Analyze"** to see insights
         
@@ -136,13 +151,12 @@ def display_welcome_screen():
         - **Interactive visualizations** of conversion paths
         - **Actionable recommendations** for marketing optimization
         
-        #### 📁 Supported Data Formats:
-        - CSV files with transaction data
-        - Excel files (.xlsx) 
-        - Required columns: CustomerID, InvoiceDate (timestamp), transaction details
+        #### 📁 Data Options:
+        - **Sample Dataset**: Realistic synthetic e-commerce data with 300 customers for testing
+        - **Your Own Data**: Upload CSV or Excel files with CustomerID and InvoiceDate columns
         
         #### 🚀 Ready to Start?
-        Upload your dataset using the sidebar or use our sample analysis with default settings!
+        Choose your data source in the sidebar and start analyzing customer journeys!
         """)
 
 def display_analysis_results(journey_data, attribution_model):

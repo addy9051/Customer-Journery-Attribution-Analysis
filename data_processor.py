@@ -10,7 +10,7 @@ def load_and_process_retail_data(file_path="Online Retail.xlsx", lookback_days=1
     
     Args:
         file_path (str): Path to the retail dataset file
-        lookback_days (int): Number of days to look back for touchpoints before conversion
+        lookbook_days (int): Number of days to look back for touchpoints before conversion
         min_touchpoints (int): Minimum number of touchpoints required per customer journey
     
     Returns:
@@ -23,13 +23,16 @@ def load_and_process_retail_data(file_path="Online Retail.xlsx", lookback_days=1
         elif file_path.endswith('.csv'):
             df = pd.read_csv(file_path)
         else:
-            # If no file found, create sample data for demonstration
-            st.warning("⚠️ Default dataset not found. Please upload your own e-commerce dataset.")
-            return pd.DataFrame()
+            # If no file found, generate sample data for demonstration
+            from sample_data_generator import generate_sample_ecommerce_data
+            st.info("ℹ️ Using sample dataset for demonstration. Upload your own data for real analysis.")
+            df = generate_sample_ecommerce_data(num_customers=300, date_range_days=365)
             
     except FileNotFoundError:
-        st.error(f"❌ File '{file_path}' not found. Please upload your e-commerce dataset using the file uploader.")
-        return pd.DataFrame()
+        # Generate sample data if default file not found
+        from sample_data_generator import generate_sample_ecommerce_data
+        st.info("ℹ️ Using sample dataset for demonstration. Upload your own data for real analysis.")
+        df = generate_sample_ecommerce_data(num_customers=300, date_range_days=365)
     except Exception as e:
         st.error(f"❌ Error loading file: {str(e)}")
         return pd.DataFrame()
