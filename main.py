@@ -12,6 +12,8 @@ from attribution_models import (
     first_touch_attribution, 
     last_touch_attribution, 
     linear_attribution,
+    time_decay_attribution,
+    position_based_attribution,
     calculate_attribution_comparison
 )
 
@@ -58,7 +60,7 @@ def main():
     st.sidebar.subheader("🎯 Attribution Model")
     attribution_model = st.sidebar.selectbox(
         "Select Attribution Model",
-        ["First-Touch", "Last-Touch", "Linear", "Compare All Models"],
+        ["First-Touch", "Last-Touch", "Linear", "Time-Decay", "Position-Based", "Compare All Models"],
         help="Choose how to attribute conversions to marketing touchpoints"
     )
     
@@ -79,6 +81,40 @@ def main():
             value=2,
             help="Minimum number of touchpoints to include in analysis"
         )
+        
+        # Model-specific parameters
+        if attribution_model == "Time-Decay":
+            decay_rate = st.slider(
+                "Time Decay Rate",
+                min_value=0.1,
+                max_value=0.9,
+                value=0.5,
+                step=0.1,
+                help="Higher values give more weight to recent touchpoints"
+            )
+        else:
+            decay_rate = 0.5
+            
+        if attribution_model == "Position-Based":
+            first_touch_weight = st.slider(
+                "First Touch Weight",
+                min_value=0.1,
+                max_value=0.8,
+                value=0.4,
+                step=0.1,
+                help="Weight given to the first touchpoint"
+            )
+            last_touch_weight = st.slider(
+                "Last Touch Weight", 
+                min_value=0.1,
+                max_value=0.8,
+                value=0.4,
+                step=0.1,
+                help="Weight given to the last touchpoint"
+            )
+        else:
+            first_touch_weight = 0.4
+            last_touch_weight = 0.4
     
     # Process button
     process_data = st.sidebar.button("🔄 Process Data & Analyze", type="primary")
@@ -229,7 +265,7 @@ def display_analysis_results(journey_data, attribution_model):
     if attribution_model == "Compare All Models":
         display_attribution_comparison(journey_data)
     else:
-        display_single_attribution_model(journey_data, attribution_model)
+        display_single_attribution_model(journey_data, attribution_model, decay_rate, first_touch_weight, last_touch_weight)
     
     # Journey path analysis
     display_journey_path_analysis(journey_data)
@@ -237,7 +273,7 @@ def display_analysis_results(journey_data, attribution_model):
     # Insights and recommendations
     display_insights_and_recommendations(journey_data, attribution_model)
 
-def display_single_attribution_model(journey_data, model_name):
+def display_single_attribution_model(journey_data, model_name, decay_rate=0.5, first_touch_weight=0.4, last_touch_weight=0.4):
     """Display results for a single attribution model"""
     
     # Calculate attribution
@@ -247,6 +283,12 @@ def display_single_attribution_model(journey_data, model_name):
         attribution_results = last_touch_attribution(journey_data)
     elif model_name == "Linear":
         attribution_results = linear_attribution(journey_data)
+    elif model_name == "Time-Decay":
+        attribution_results = time_decay_attribution(journey_data, decay_rate=decay_rate)
+    elif model_name == "Position-Based":
+        attribution_results = position_based_attribution(journey_data, first_touch_weight=first_touch_weight, last_touch_weight=last_touch_weight)
+    else:
+        attribution_results = first_touch_attribution(journey_data)  # fallback
     
     col1, col2 = st.columns(2)
     
