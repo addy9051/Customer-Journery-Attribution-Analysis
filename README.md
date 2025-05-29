@@ -67,4 +67,3 @@ Your e-commerce dataset should include:
 
 **Supported formats**: CSV (.csv), Excel (.xlsx, .xls)
 
-**Example data structure**:
