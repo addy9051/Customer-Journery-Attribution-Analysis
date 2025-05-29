@@ -276,7 +276,7 @@ def generate_pre_conversion_touchpoints(customer_id, conversion_date, lookback_d
     touchpoints = []
     
     # Generate 1-3 touchpoints before conversion
-    num_touchpoints = np.random.choice([1, 2, 3], p=[0.3, 0.5, 0.2])
+    num_touchpoints = int(np.random.choice([1, 2, 3], p=[0.3, 0.5, 0.2]))
     
     # Define typical customer journey patterns
     journey_patterns = [
@@ -290,13 +290,13 @@ def generate_pre_conversion_touchpoints(customer_id, conversion_date, lookback_d
     
     # Select a journey pattern
     if num_touchpoints == 1:
-        selected_channels = [np.random.choice(['Organic Search', 'Paid Search', 'Social Media'])]
+        channel_options = ['Organic Search', 'Paid Search', 'Social Media']
+        selected_channels = [str(np.random.choice(channel_options))]
     elif num_touchpoints == 2:
-        pattern = np.random.choice(journey_patterns[:3])
-        selected_channels = pattern[:2]
+        pattern_idx = np.random.randint(0, 3)
+        selected_channels = journey_patterns[pattern_idx][:2]
     else:
-        pattern = journey_patterns[3]  # 3-touchpoint pattern
-        selected_channels = pattern
+        selected_channels = journey_patterns[3]  # 3-touchpoint pattern
     
     # Generate touchpoints with realistic timing
     for i, channel in enumerate(selected_channels):
