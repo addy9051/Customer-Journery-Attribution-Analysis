@@ -263,7 +263,7 @@ def display_analysis_results(journey_data, attribution_model):
     st.header("🎯 Attribution Analysis")
     
     if attribution_model == "Compare All Models":
-        display_attribution_comparison(journey_data)
+        display_attribution_comparison(journey_data, decay_rate, first_touch_weight, last_touch_weight)
     else:
         display_single_attribution_model(journey_data, attribution_model, decay_rate, first_touch_weight, last_touch_weight)
     
@@ -326,12 +326,12 @@ def display_single_attribution_model(journey_data, model_name, decay_rate=0.5, f
             hide_index=True
         )
 
-def display_attribution_comparison(journey_data):
+def display_attribution_comparison(journey_data, decay_rate=0.5, first_touch_weight=0.4, last_touch_weight=0.4):
     """Display comparison of all attribution models"""
     
     st.subheader("Attribution Model Comparison")
     
-    comparison_results = calculate_attribution_comparison(journey_data)
+    comparison_results = calculate_attribution_comparison(journey_data, decay_rate, first_touch_weight, last_touch_weight)
     
     # Create comparison visualization
     fig = go.Figure()

@@ -304,12 +304,15 @@ def position_based_attribution(journey_data, first_touch_weight=0.4, last_touch_
         print(f"Error in position_based_attribution: {str(e)}")
         return pd.DataFrame(columns=pd.Index(['channel', 'attributed_conversions']))
 
-def calculate_attribution_comparison(journey_data):
+def calculate_attribution_comparison(journey_data, decay_rate=0.5, first_touch_weight=0.4, last_touch_weight=0.4):
     """
     Calculate attribution results for all models and return comparison data.
     
     Args:
         journey_data (pd.DataFrame): Customer journey data
+        decay_rate (float): Decay rate for time-decay attribution
+        first_touch_weight (float): Weight for first touch in position-based attribution
+        last_touch_weight (float): Weight for last touch in position-based attribution
     
     Returns:
         pd.DataFrame: Comparison results with columns: model, channel, attributed_conversions
@@ -328,12 +331,10 @@ def calculate_attribution_comparison(journey_data):
         
         for model_name, attribution_function in models.items():
             try:
-                if model_name in ['Time-Decay', 'Position-Based']:
-                    # These models have additional parameters
-                    if model_name == 'Time-Decay':
-                        results = attribution_function(journey_data, decay_rate=0.5)
-                    else:  # Position-Based
-                        results = attribution_function(journey_data)
+                if model_name == 'Time-Decay':
+                    results = attribution_function(journey_data, decay_rate=decay_rate)
+                elif model_name == 'Position-Based':
+                    results = attribution_function(journey_data, first_touch_weight=first_touch_weight, last_touch_weight=last_touch_weight)
                 else:
                     results = attribution_function(journey_data)
                 
