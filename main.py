@@ -217,6 +217,14 @@ def display_welcome_screen():
         - **Interactive visualizations** of conversion paths
         - **Actionable recommendations** for marketing optimization
         
+        #### 🧠 Attribution Models Available:
+        - **First-Touch & Last-Touch**: Simple rule-based attribution
+        - **Linear**: Equal credit distribution across touchpoints
+        - **Time-Decay**: More weight to recent touchpoints
+        - **Position-Based**: U-shaped attribution emphasizing first and last touches
+        - **Markov Chain**: Advanced probabilistic model using transition matrices
+        - **Shapley Value**: Game theory approach with logistic regression
+        
         #### 📁 Data Options:
         - **Sample Dataset**: Realistic synthetic e-commerce data with 300 customers for testing
         - **Your Own Data**: Upload CSV or Excel files with CustomerID and InvoiceDate columns
